@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 )
 
 var (
 	// DefaultBackoff is set when no backoff is set
-	DefaultBackoff = ConstantBackoff(time.Second)
+	DefaultBackoff = ConstantBackoff(0)
 
 	// ErrMaxRetriesExceeded is returned when max retries is set and max retries exceed
 	ErrMaxRetriesExceeded = errors.New("max retries exceeded")
