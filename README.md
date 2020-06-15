@@ -33,7 +33,7 @@ Even in scenarios where you need to indefinitely retry calls:
 
 ```go
 err := retry.New(
-    retry.WithExponentialBackoff(time.Second),
+    retry.WithExponentialBackoff(0),
 ).RetryCall(func(ctx context.Context) error {
     // Do some work
     return nil
@@ -49,7 +49,7 @@ func() {
 
     // No need to set max retries, when context is canceled retry will end (assuming callback is returned when context is canceled)
     err := retry.New(
-        retry.WithExponentialBackoff(time.Second), 
+        retry.WithExponentialBackoff(0), 
         retry.WithContext(ctx),
     ).RetryCall(func(ctx context.Context) error {
         // Do some work
