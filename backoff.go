@@ -39,7 +39,7 @@ func ConstantBackoff(duration time.Duration) Backoff {
 func ExponentialBackoff(start time.Duration) Backoff {
 	return BackoffFunc(func(ctx context.Context) error {
 		info := GetInfo(ctx)
-		tmr := time.NewTimer(start + time.Duration(1<<(info.CurrentRetry-1)))
+		tmr := time.NewTimer(start + time.Second<<(info.CurrentRetry-1))
 		for {
 			select {
 			case <-tmr.C:
