@@ -23,6 +23,8 @@ func TestExponentialBackoff(t *testing.T) {
 		{0, 2, 2},
 		{0, 3, 4},
 		{0, 4, 8},
+		{0, 5, 16},
+		{0, 6, 32},
 	}
 
 	wg.Add(len(data))
