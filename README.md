@@ -12,8 +12,7 @@ Let's show example:
 err := retry.New(
     retry.WithConstantBackoff(time.Second * 2), 
     retry.WithMaxRetries(10), 
-    retry.WithContext(context.Background()),
-).RetryCall(func(ctx context.Context) error {
+).Retry(func(ctx context.Context) error {
 	
     // just skip first call and retry this call 
     if GetInfo(ctx).CurrentRetry == 0 {
@@ -26,7 +25,7 @@ err := retry.New(
     
     // return error
     return fmt.Errorf("nope")
-})
+}).Do(context.Background())
 ```
 
 Even in scenarios where you need to indefinitely retry calls:
@@ -34,10 +33,10 @@ Even in scenarios where you need to indefinitely retry calls:
 ```go
 err := retry.New(
     retry.WithExponentialBackoff(0),
-).RetryCall(func(ctx context.Context) error {
+).Retry(func(ctx context.Context) error {
     // Do some work
     return nil
-})
+}).Do(context.Background())
 ```
 
 You can rely on context to be canceled
@@ -50,11 +49,10 @@ func() {
     // No need to set max retries, when context is canceled retry will end (assuming callback is returned when context is canceled)
     err := retry.New(
         retry.WithExponentialBackoff(0), 
-        retry.WithContext(ctx),
-    ).RetryCall(func(ctx context.Context) error {
+    ).Retry(func(ctx context.Context) error {
         // Do some work
         return nil
-    })
+    }).Do(ctx)
 }()
 ```
 
@@ -78,10 +76,10 @@ err := retry.New(
                 return ctx.Err()
             }
         }
-    })).RetryCall(func(ctx context.Context) error {
+    })).Retry(func(ctx context.Context) error {
     	// Do some work
     	return nil
-    })
+    }).Do(context.Background())
 )
 ```
 

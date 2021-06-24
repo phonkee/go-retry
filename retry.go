@@ -18,6 +18,9 @@ var (
 
 	// ErrRetryAgain should be returned when we want to retry call again
 	ErrRetryAgain = errors.New("please retry again")
+
+	// ErrInvalidCallable is returned when callable was not provided
+	ErrInvalidCallable = errors.New("callable not provided")
 )
 
 // contextKey for custom context key
@@ -31,14 +34,17 @@ const (
 // Retry interface
 type Retry interface {
 
-	// RetryCall calls given function until it succeeds or until it exceeds max retries, or context timeouts
-	RetryCall(callable func(ctx context.Context) error) error
+	// Do performs retried call
+	// calls given function until it succeeds or until it exceeds max retries, or context timeouts
+	Do(ctx context.Context) error
+
+	// Retry stores callable to be called in Do
+	Retry(callable func(ctx context.Context) error) Retry
 }
 
 // New instantiates new Retry interface
 func New(options ...Option) Retry {
 	result := &retry{
-		context: context.Background(),
 	}
 
 	// apply all options
@@ -57,22 +63,24 @@ func New(options ...Option) Retry {
 // retry implements Retry interface
 type retry struct {
 	backoff    Backoff
-	context    context.Context
 	maxRetries uint
+	callable   func(ctx context.Context) error
 }
 
-// RetryCall calls callable multiple times, when callable returns error, we continue with next iteration
-// Retry ends when either:
+// Do calls callable multiple times, when callable returns error, we continue with next iteration
+// Do ends when either:
 //   * callable succeeds
 //   * callable returns error (other than ErrRetryAgain)
 //   * context timeouts
 //   * max retries exceed
-func (r *retry) RetryCall(callable func(ctx context.Context) error) error {
-	// separate goroutine
-
+func (r *retry) Do(ctx context.Context) error {
 	var (
 		err error
 	)
+
+	if r.callable == nil {
+		return ErrInvalidCallable
+	}
 
 	// now run main loop
 	for current := uint(0); ; current++ {
@@ -83,12 +91,12 @@ func (r *retry) RetryCall(callable func(ctx context.Context) error) error {
 		}
 
 		// check if context was closed
-		if err = r.context.Err(); err != nil {
+		if err = ctx.Err(); err != nil {
 			return err
 		}
 
 		// create context with values
-		ctx := context.WithValue(r.context, key, Info{
+		ctx := context.WithValue(ctx, key, Info{
 			CurrentRetry: current,
 			MaxRetries:   r.maxRetries,
 		})
@@ -110,7 +118,7 @@ func (r *retry) RetryCall(callable func(ctx context.Context) error) error {
 			}()
 
 			// now call callable with custom context
-			err = callable(ctx)
+			err = r.callable(ctx)
 		}()
 
 		// now check for errors
@@ -135,4 +143,11 @@ func (r *retry) RetryCall(callable func(ctx context.Context) error) error {
 		// callback returned no error, we gladly return it back to caller
 		return nil
 	}
+
+}
+
+// Retry stores callable
+func (r *retry) Retry(callable func(ctx context.Context) error) Retry {
+	r.callable = callable
+	return r
 }

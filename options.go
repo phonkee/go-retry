@@ -1,7 +1,6 @@
 package retry
 
 import (
-	"context"
 	"time"
 )
 
@@ -29,12 +28,5 @@ func WithExponentialBackoff(start time.Duration) Option {
 func WithMaxRetries(maxRetries uint) Option {
 	return func(r *retry) {
 		r.maxRetries = maxRetries
-	}
-}
-
-// WithContext adds custom context
-func WithContext(ctx context.Context) Option {
-	return func(r *retry) {
-		r.context = ctx
 	}
 }
